@@ -1,14 +1,67 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ERC20 Transfer Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BarisToken Transfer Page</title>
+  <meta name="author" content="bsnyr03" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body { background:#f0f2f5; color:#333; text-align:center; font-family:Arial,sans-serif; padding:2rem; }
+    h1 { margin-bottom:1.5rem; }
+    button { background:#28a745; color:white; border:none; padding:0.75rem 1.5rem; font-size:1rem; border-radius:5px; cursor:pointer; }
+    button:hover { background:#218838; }
+    #status { margin-top:1rem; font-size:1.1rem; }
+    footer { margin-top:2rem; font-size:0.8rem; color:#666; }
+  </style>
 </head>
 <body>
-  <h1>ERC20 Transfer Page</h1>
+  <h1>BAR Transfer</h1>
+  <p>Send <strong>10</strong> tokens to recipient on Holesky</p>
   <button id="btnTransfer">Transfer 10 Tokens</button>
-  <p id="balance"></p>
+  <p id="status"></p>
+
+  <script>
+
+    const tokenAddress = "0x21EA22cd84AEE344b0c4f03ee33Fd11604570503";
+    const recipient = "0xBF05B6c4450Df904446ca1fE7b820Aca1171469d";
+
+    const tokenAbi = [
+      "function transfer(address to, uint256 amount) returns (bool)",
+      "function decimals() view returns (uint8)"
+    ];
+
+    const btn = document.getElementById('btnTransfer');
+    const status = document.getElementById('status');
+
+    btn.addEventListener('click', async () => {
+      status.textContent = '';
+      if (!window.ethereum) {
+        status.textContent = 'MetaMask not detected.';
+        return;
+      }
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+
+        const decimals = await tokenContract.decimals();
+        const amount = ethers.utils.parseUnits("10", decimals);
+
+        const tx = await tokenContract.transfer(recipient, amount);
+        status.textContent = 'Transaction sent. Waiting for confirmation...';
+
+        await tx.wait();
+        status.textContent = `Transfer successful! TxHash: ${tx.hash}`;
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Error: ' + (err.message || err);
+      }
+    });
+  </script>
+
+  <footer>Author: bsnyr03</footer>
 </body>
 </html>
